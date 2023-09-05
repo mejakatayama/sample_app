@@ -1,5 +1,4 @@
 class User < ApplicationRecord
-  attr_accessor :remember_token
   before_save { email.downcase! }
   validates :name, presence: true, length: { maximum: 50 }
   VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
@@ -7,7 +6,8 @@ class User < ApplicationRecord
                     format:     { with: VALID_EMAIL_REGEX },
                     uniqueness: true
   has_secure_password
-  validates :password, presence: true, length: { minimum: 6 }
+  validates :password, presence: true, length: { minimum: 6 }, allow_nil: true
+  attr_accessor :remember_token
 
   # 渡された文字列のハッシュ値を返す
   def User.digest(string)
@@ -21,15 +21,11 @@ class User < ApplicationRecord
     SecureRandom.urlsafe_base64
   end
 
-  # 永続セッションのためにユーザーをデータベースに記憶する
+  # 永続的セッションのためにユーザーをデータベースに記憶する
   def remember
     self.remember_token = User.new_token
     update_attribute(:remember_digest, User.digest(remember_token))
     remember_digest
-  end
-
-  def session_token
-    remember_digest || remember
   end
 
   # 渡されたトークンがダイジェストと一致したらtrueを返す
@@ -42,5 +38,10 @@ class User < ApplicationRecord
   def forget
     update_attribute(:remember_digest, nil)
   end
+
+  def session_token
+    remember_digest || remember
+  end
+
 
 end
